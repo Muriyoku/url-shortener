@@ -1,0 +1,19 @@
+{
+  "name": "url-shortener",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "scripts": {
+    "bun start": "bun run --watch index.ts"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "zod": "^3.25.67"
+  }
+}
