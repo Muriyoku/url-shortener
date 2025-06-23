@@ -1,0 +1,1 @@
+import './database/migrations/migration.database';
