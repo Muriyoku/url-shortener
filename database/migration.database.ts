@@ -1,4 +1,4 @@
-import { db } from "../config/config.database";
+import { db } from "./config.database";
 import { sql } from "bun";
 
 await db.connect()
