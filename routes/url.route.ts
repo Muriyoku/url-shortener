@@ -1,4 +1,4 @@
-import { generateShortUrlService } from "../services/url.service";
+import { generateShortUrlService, redirectToLongUrlService } from "../services/url.service";
 import type { BunRequest } from "bun";
 import * as z from "zod/v4";
 
@@ -17,6 +17,8 @@ const urlScheme = z.object({
   ),
 });
 
+const urlCode = z.string();
+
 export async function generateShortUrlRoute(req: BunRequest<"/api/url">) {
   try {
     const parsedInput = await urlScheme.parseAsync(await req.json());
@@ -29,9 +31,28 @@ export async function generateShortUrlRoute(req: BunRequest<"/api/url">) {
         { status: 400, statusText: "Bad Request" }
       );
     }
-    console.log(err)
     return Response.json(
       { status: 500, statusText: "Internal Server Error" }
     );
-  }
-}
+  };
+};
+
+export async function redirectToLongUrlRoute(req: BunRequest<"/api/url">) {
+  const query = new URLSearchParams(req.url);
+  let value: undefined | string;
+  for (const values of query.values()) value = values;
+  try {
+    const longUrl = await redirectToLongUrlService(urlCode.parse(value));
+    return Response.redirect(longUrl);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return Response.json(
+        { message: err.issues },
+        { status: 400, statusText: "Bad Request" }
+      );
+    }
+    return Response.json(
+      { status: 500, statusText: "Internal Server Error" }
+    );
+  };
+};

@@ -34,3 +34,15 @@ export async function generateShortUrlService(url: string) {
     throw new Error(`Unkown Error`); 
   };
 }; 
+
+export async function redirectToLongUrlService(code: string) {
+  try {
+    const [ long_url ] = await sql`
+      SELECT long_url FROM url_shortner WHERE short_url = ${code}
+    `;
+    return long_url.long_url;
+  } catch(err) {
+    throw new Error("Unknown Error");
+  };
+};
+
