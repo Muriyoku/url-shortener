@@ -11,9 +11,6 @@ export const db = new SQL({
   idleTimeout: 30, 
   maxLifetime: 0, 
   max: 20, 
-  onconnect: client => {
-    console.log("Connected to database");
-  },
   onclose: client => {
     console.log("Connection closed");
   },
