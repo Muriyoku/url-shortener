@@ -12,12 +12,9 @@ export async function generateShortUrlService(url: string) {
   };
 
   try {
-    const codeExists = await sql`
-      SELECT short_url FROM url_shortner WHERE short_url = ${code}
-    `;
-
+    const codeExists = await getShortUrlCodeService(code);
     // Check if a do..while loop is better in perfomance
-    if(Array.from(codeExists).length !== 0) {
+    if(Array.from(codeExists as []).length !== 0) {
       console.log('trying again...')
       return generateShortUrlService(url);
     };
@@ -46,3 +43,10 @@ export async function redirectToLongUrlService(code: string) {
   };
 };
 
+async function getShortUrlCodeService(code: string): Promise<unknown[] | undefined> {
+  try {
+    return await sql`SELECT short_url FROM url_shortner WHERE short_url = ${code}`;
+  } catch (err) {
+    throw err;
+  };
+};
