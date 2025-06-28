@@ -1,6 +1,7 @@
 import { generateShortUrlService, redirectToLongUrlService } from "../services/url.service";
 import type { BunRequest } from "bun";
 import * as z from "zod/v4";
+import { PostgresError } from "../error/database.error";
 
 const allowedProtocols = ["http:", "https:"];
 
@@ -30,7 +31,13 @@ export async function generateShortUrlRoute(req: BunRequest<"/api/url">) {
         { message: err.issues },
         { status: 400, statusText: "Bad Request" }
       );
-    }
+    };
+    if(err instanceof PostgresError) {
+      return Response.json(
+        { message: err.message}, 
+        { status: err.status, statusText: err.statusText}
+      );
+    };
     return Response.json(
       { status: 500, statusText: "Internal Server Error" }
     );

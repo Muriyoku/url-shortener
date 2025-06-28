@@ -1,6 +1,6 @@
 import { generateRandomCode } from "../helper/generateRandomCode.helper";
-import { PostgresError } from "../error/database.error";
 import { sql } from "bun";
+import { handlePostgresqlErrors } from "../middleware/errors/postgresql.middleware";
 
 type shortUrlRow = { short_url: string };
 
@@ -20,13 +20,7 @@ export async function generateShortUrlService(url: string) {
       (long_url, short_url) VALUES (${url}, ${code});
     `;
   } catch (err) {
-    if ((err as PostgresError).errno === "23505") {
-      throw new PostgresError(
-        "23505",
-        "Already there is a code attached to url"
-      );
-    }
-    console.error(err)
+    handlePostgresqlErrors(err);
     throw new Error(`Unkown Error`);
   }
 }
@@ -38,6 +32,7 @@ export async function redirectToLongUrlService(code: string) {
     `;
     return long_url.long_url;
   } catch (err) {
+    handlePostgresqlErrors(err);
     throw new Error("Unknown Error");
   }
 }
@@ -51,6 +46,7 @@ async function getShortUrlCodeService(
     `) as shortUrlRow[];
     return shortUrlRow;
   } catch (err) {
+    handlePostgresqlErrors(err);
     throw err;
   }
 }
