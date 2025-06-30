@@ -30,6 +30,7 @@ export async function redirectToLongUrlService(code: string) {
     const [long_url] = await sql`
       SELECT long_url FROM url_shortner WHERE short_url = ${code}
     `;
+    await updateClickCountOfShortUrl(code);
     return long_url.long_url;
   } catch (err) {
     handlePostgresqlErrors(err);
@@ -50,3 +51,28 @@ async function getShortUrlCodeService(
     throw err;
   }
 }
+
+async function updateClickCountOfShortUrl(code: string) {
+  try {
+    const currentClicksObj = await getClicksCountOfShortUrl(code) as {clicks: number}[]; 
+    const currentClicksint = currentClicksObj[0]?.clicks;
+
+    if(typeof currentClicksint !== 'number') {
+      throw new Error().message = "The click column is not a number";
+    }
+
+    await sql`UPDATE url_shortner SET clicks = ${currentClicksint+ 1} WHERE short_url = ${code}`
+  } catch(err) {
+    handlePostgresqlErrors(err);
+    throw err; 
+  };
+};
+
+async function getClicksCountOfShortUrl(code: string) {
+  try {
+    return await sql`SELECT clicks FROM url_shortner WHERE short_url = ${code}`;
+  } catch(err) {
+    handlePostgresqlErrors(err);
+    throw err; 
+  };
+};
