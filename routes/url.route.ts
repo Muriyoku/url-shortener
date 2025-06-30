@@ -2,6 +2,7 @@ import { generateShortUrlService, redirectToLongUrlService } from "../services/u
 import type { BunRequest } from "bun";
 import * as z from "zod/v4";
 import { PostgresError } from "../error/database.error";
+import { recordErrors } from "../helper/recordErrors";
 
 const allowedProtocols = ["http:", "https:"];
 
@@ -27,17 +28,21 @@ export async function generateShortUrlRoute(req: BunRequest<"/api/url">) {
     return Response.json({}, {status: 200, statusText: 'Ok'});
   } catch (err) {
     if (err instanceof z.ZodError) {
+      recordErrors(err);
       return Response.json(
         { message: err.issues },
         { status: 400, statusText: "Bad Request" }
       );
     };
     if(err instanceof PostgresError) {
+      recordErrors(err);
       return Response.json(
         { message: err.message}, 
         { status: err.status, statusText: err.statusText}
       );
     };
+
+    recordErrors(err);
     return Response.json(
       { status: 500, statusText: "Internal Server Error" }
     );
@@ -53,11 +58,13 @@ export async function redirectToLongUrlRoute(req: BunRequest<"/api/url">) {
     return Response.redirect(longUrl);
   } catch (err) {
     if (err instanceof z.ZodError) {
+      recordErrors(err)
       return Response.json(
         { message: err.issues },
         { status: 400, statusText: "Bad Request" }
       );
     }
+    recordErrors(err)
     return Response.json(
       { status: 500, statusText: "Internal Server Error" }
     );
