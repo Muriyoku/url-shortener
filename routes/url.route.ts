@@ -1,8 +1,9 @@
 import { generateShortUrlService, redirectToLongUrlService } from "../services/url.service";
 import type { BunRequest } from "bun";
 import * as z from "zod/v4";
-import { PostgresError } from "../error/database.error";
+import { PostgresError } from "../error/errors";
 import { recordErrors } from "../helper/recordErrors";
+import { getFromCache } from "../infra/cache/cache.infra";
 
 const allowedProtocols = ["http:", "https:"];
 
@@ -54,6 +55,10 @@ export async function redirectToLongUrlRoute(req: BunRequest<"/api/url">) {
   let value: undefined | string;
   for (const values of query.values()) value = values;
   try {
+    const cache = getFromCache(urlCode.parse(value));
+    
+    if(cache) {return Response.redirect(cache.value)};
+
     const longUrl = await redirectToLongUrlService(urlCode.parse(value));
     return Response.redirect(longUrl);
   } catch (err) {

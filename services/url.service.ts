@@ -1,6 +1,7 @@
 import { generateRandomCode } from "../helper/generateRandomCode.helper";
 import { sql } from "bun";
 import { handlePostgresqlErrors } from "../middleware/errors/postgresql.middleware";
+import { addToCache } from "../infra/cache/cache.infra";
 
 type shortUrlRow = { short_url: string };
 
@@ -31,6 +32,7 @@ export async function redirectToLongUrlService(code: string) {
       SELECT long_url FROM url_shortner WHERE short_url = ${code}
     `;
     await updateClickCountOfShortUrl(code);
+    addToCache(code, long_url.long_url);
     return long_url.long_url;
   } catch (err) {
     handlePostgresqlErrors(err);

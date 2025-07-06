@@ -1,4 +1,4 @@
-import { PostgresError } from "../../error/database.error";
+import { PostgresError } from "../../error/errors";
 // implement the error code: 42703 handling
 export function handlePostgresqlErrors(err: unknown) {
   const ERROR = (err as PostgresError).errno;
