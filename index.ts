@@ -1,12 +1,12 @@
 import './database/migration.database';
-import { generateShortUrlRoute, redirectToLongUrlRoute } from './routes/url.route';
+import { generateShortUrlRoute, redirectToOriginalUrlRoute } from './routes/url.route';
 
 const server = Bun.serve({
   port: 3000,
   idleTimeout: 0,
   routes: {
     "/api/url": {
-      GET: redirectToLongUrlRoute,
+      GET: redirectToOriginalUrlRoute,
       POST: generateShortUrlRoute,
     },
   },
