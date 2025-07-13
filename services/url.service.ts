@@ -2,7 +2,6 @@ import { generateRandomCode } from "../helper/generateRandomCode.helper";
 import { sql } from "bun";
 import { handlePostgresqlErrors } from "../middleware/errors/postgresql.middleware";
 import { addToCache } from "../infra/cache/cache.infra";
-import type { PostgresError } from "../error/errors";
 
 type shortUrlRow = { short_url: string };
 
