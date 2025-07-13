@@ -8,16 +8,26 @@ type shortUrlRow = { short_url: string };
 export async function generateShortUrlService(url: string) {
   let code;
   let collisions;
+  let attempts_count = 0;
+  const MAX_CODE_GENERATION_ATTEMPTS = 5; 
 
   try {
     do {
       code = generateRandomCode();
       collisions = ((await getShortUrlCodeService(code)) as shortUrlRow);
+
       if(!collisions) break;
-    } while (collisions.short_url.length > 0);
+
+      attempts_count++;
+    } while (collisions.short_url.length > 0 && attempts_count <= MAX_CODE_GENERATION_ATTEMPTS);
+
+    if(attempts_count > MAX_CODE_GENERATION_ATTEMPTS ) {
+      throw new Error("Number of attempts exceeded");
+    };
 
     await sql`INSERT INTO url_shortner (long_url, short_url) VALUES (${url}, ${code});`;
   } catch (err) {
+   
     handlePostgresqlErrors(err);
 
     throw new Error(`Unkown Error`);
@@ -41,11 +51,7 @@ export async function redirectToOriginalUrlService(code: string) {
 
 async function getShortUrlCodeService(code: string): Promise<shortUrlRow | undefined> {
   try {
-    const [ shortUrlRow ]: shortUrlRow[]= (await sql`SELECT short_url FROM url_shortner WHERE short_url = ${code}`);
-    
-    if(!shortUrlRow?.short_url) {
-      throw new Error("short_url does not exists");
-    };
+    const [ shortUrlRow ]: shortUrlRow[] = (await sql`SELECT short_url FROM url_shortner WHERE short_url = ${code}`);
 
     return shortUrlRow;
   } catch (err) {
