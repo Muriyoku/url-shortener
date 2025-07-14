@@ -2,7 +2,12 @@ import { handlePostgresqlErrors } from "../middleware/errors/postgresql.middlewa
 import { generateRandomCode } from "../helper/generateRandomCode.helper";
 import { addToCache } from "../infra/cache/cache.infra";
 import { recordErrors } from "../helper/recordErrors";
-import { sql } from "bun";
+import { 
+  getLongUrlByCode, 
+  getShortUrlByCode, 
+  incrementlClickCount, 
+  insertShortUrl 
+} from "../database/sql.database";
 
 type ShortUrlRow = { short_url: string };
 type ShortUrl = ShortUrlRow | undefined;
@@ -24,10 +29,7 @@ export async function generateShortUrl(url: string) {
       };
     };
 
-    await sql`
-	 	  INSERT INTO url_shortner (long_url, short_url) 
-		  VALUES (${url}, ${code})
-	  `;
+    await insertShortUrl(url, code);
   } catch (err) {
     handlePostgresqlErrors(err);
     recordErrors(err);
@@ -37,69 +39,26 @@ export async function generateShortUrl(url: string) {
 
 export async function getRedirectCode(code: string) {
   try {
-    const [{ long_url }] = await sql`
-		  SELECT long_url 
-		  FROM url_shortner
-		  WHERE short_url = ${code}
-	  `;
+    const [{ long_url }] = await getLongUrlByCode(code);
 
-    await updateClickCount(code);
+    await incrementlClickCount(code);
     addToCache(code, long_url);
 
     return long_url;
   } catch (err) {
     handlePostgresqlErrors(err);
-    
+
     throw new Error("Unknown Error");
   }
 }
 
 async function getShortUrl(code: string): Promise<ShortUrlRow | undefined> {
   try {
-    const [ shortUrlRow ] = await sql`
-		  SELECT short_url 
-		  FROM url_shortner 
-		  WHERE short_url = ${code}
-	  `;
+    const [ shortUrlRow ] = await getShortUrlByCode(code); 
 
     return shortUrlRow;
   } catch (err) {
     handlePostgresqlErrors(err);
-    throw err;
-  }
-}
-
-async function updateClickCount(code: string) {
-  try {
-    const currentClicksObj = await getClicksCount(code);
-    const currentClicksInt = currentClicksObj[0]?.clicks;
-
-    if (typeof currentClicksInt !== "number") {
-      throw new TypeError("The click column is not a number");
-    }
-
-    await sql`
-		  UPDATE url_shortner 
-		  SET clicks = clicks + 1 
-		  WHERE short_url = ${code}
-	  `;
-  } catch (err) {
-    handlePostgresqlErrors(err);
-
-    throw err;
-  }
-}
-
-async function getClicksCount(code: string) {
-  try {
-    return await sql`
-		  SELECT clicks 
-		  FROM url_shortner 
-		  WHERE short_url = ${code}
-	  `;
-  } catch (err) {
-    handlePostgresqlErrors(err);
-
     throw err;
   }
 }
