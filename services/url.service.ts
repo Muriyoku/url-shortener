@@ -1,16 +1,7 @@
-/*
-  Future features, manutention, and updates:
-  
-  1 - Separete raw SQL from services into two different layers 
-  2 - Rename columns of PostgresSQL for a better readibility 
-  3 - Improve error handling of PostgresSQL, in addition, generic errors.
-  4 - Refatore loops, for a better performance and readibility 
-  5 - Rename functions names for readibility 
-*/
-
 import { handlePostgresqlErrors } from "../middleware/errors/postgresql.middleware";
 import { generateRandomCode } from "../helper/generateRandomCode.helper";
 import { addToCache } from "../infra/cache/cache.infra";
+import { recordErrors } from "../helper/recordErrors";
 import { sql } from "bun";
 
 type ShortUrlRow = { short_url: string };
@@ -39,10 +30,10 @@ export async function generateShortUrl(url: string) {
 	  `;
   } catch (err) {
     handlePostgresqlErrors(err);
-
+    recordErrors(err);
     throw new Error(`Unkown Error`);
-  }
-}
+  };
+};
 
 export async function getRedirectCode(code: string) {
   try {
@@ -58,7 +49,7 @@ export async function getRedirectCode(code: string) {
     return long_url;
   } catch (err) {
     handlePostgresqlErrors(err);
-
+    
     throw new Error("Unknown Error");
   }
 }
