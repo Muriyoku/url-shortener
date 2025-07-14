@@ -2,21 +2,22 @@ import { appendFile } from "node:fs/promises";
 import * as z from "zod/v4";
 
 const logPath = process.env.LOG_PATH as string; 
-const logQueue: any[] = [];
+
+const logQueue: string[] = [];
 let isWriting = false;
 
-// Get sensive information from Errors and record it in a log file. 
 export function recordErrors(err: any) {
-  let error: string;
+  const currentDate = new Date().toISOString();
+  let formattedErr: string;
 
   if (err instanceof z.ZodError) {
-    const firstIssue = err.issues[0];
-    error = `[${new Date().toISOString()}] ${firstIssue?.message ?? "Unknown validation error"}\n`;
+    const issue = err.issues[0];
+    formattedErr = `[${currentDate}] ${issue?.message ?? "Unknown validation error"}\n`;
   } else {
-    error = `[${new Date().toISOString()}] ${err?.message ?? "Unknown error"}\n`;
+    formattedErr = `[${currentDate}] ${err?.message ?? "Unknown error"}\n`;
   };
 
-  logQueue.push(error);
+  logQueue.push(formattedErr);
   flushLogQueue();
 };
 
