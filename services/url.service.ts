@@ -5,7 +5,7 @@ import { recordErrors } from "../helper/recordErrors";
 import { 
   getLongUrlByCode, 
   getShortUrlByCode, 
-  incrementlClickCount, 
+  incrementClickCount, 
   insertShortUrl 
 } from "../database/sql.database";
 
@@ -41,7 +41,7 @@ export async function getRedirectCode(code: string) {
   try {
     const [{ long_url }] = await getLongUrlByCode(code);
 
-    await incrementlClickCount(code);
+    await incrementClickCount(code);
     addToCache(code, long_url);
 
     return long_url;
@@ -62,3 +62,12 @@ async function getShortUrl(code: string): Promise<ShortUrlRow | undefined> {
     throw err;
   }
 }
+
+export async function updateClicksCount(code: string) {
+  try {
+    await incrementClickCount(code);
+  } catch(err) {
+    handlePostgresqlErrors(err);
+    throw err;
+  };
+};

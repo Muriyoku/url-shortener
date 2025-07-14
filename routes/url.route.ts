@@ -1,4 +1,4 @@
-import { generateShortUrl, getRedirectCode } from "../services/url.service";
+import { generateShortUrl, getRedirectCode, updateClicksCount } from "../services/url.service";
 import type { BunRequest } from "bun";
 import * as z from "zod/v4";
 import { PostgresError } from "../error/errors";
@@ -57,9 +57,13 @@ export async function redirectToOriginalUrlRoute(req: BunRequest<"/api/url">) {
   try {
     const cache = getFromCache(urlCode.parse(value));
     
-    if(cache) {return Response.redirect(cache.value)};
+    if(cache) {
+      updateClicksCount(urlCode.parse(value));
+      return Response.redirect(cache.value)
+    };
 
     const longUrl = await getRedirectCode(urlCode.parse(value));
+    updateClicksCount(urlCode.parse(value));
     return Response.redirect(longUrl);
   } catch (err) {
     if (err instanceof z.ZodError) {

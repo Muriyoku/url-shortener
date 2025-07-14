@@ -26,11 +26,10 @@ export async function getShortUrlByCode(code: string): Promise<ShortUrlRow> {
 	`;
 };
 
-export async function incrementlClickCount(code: string) {
+export async function incrementClickCount(code: string) {
   await sql`
 	  UPDATE url_shortner 
 	  SET clicks = clicks + 1 
 	  WHERE short_url = ${code}
 	`;
 };
-// http://localhost:3000/api/url?q=cYDz83vwqmw
