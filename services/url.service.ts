@@ -14,26 +14,24 @@ import { addToCache } from "../infra/cache/cache.infra";
 import { sql } from "bun";
 
 type ShortUrlRow = { short_url: string };
+type ShortUrl = ShortUrlRow | undefined;
 
 export async function generateShortUrl(url: string) {
-  let code: string;
-  let collision: ShortUrlRow | undefined;
-  let attemptsCount: number = 0;
-  const maxAttempts: number = 5;
+  let code = "";
+  let collision: ShortUrl;
+  const maxAttempts = 5;
 
   try {
-    do {
+    for(let attemptsCount = 1; attemptsCount <= maxAttempts; attemptsCount++) {
       code = generateRandomCode();
       collision = await getShortUrl(code);
-
+  
       if (!collision) break;
 
-      attemptsCount++;
-    } while (collision?.short_url.length > 0 && attemptsCount <= maxAttempts);
-
-    if (attemptsCount > maxAttempts) {
-      throw new Error("Number of attempts exceeded");
-    }
+      if (attemptsCount >= maxAttempts) {
+        throw new Error("Number of attempts exceeded");
+      };
+    };
 
     await sql`
 	 	  INSERT INTO url_shortner (long_url, short_url) 
