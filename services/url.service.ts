@@ -1,3 +1,13 @@
+/*
+  Future features, manutention, and updates:
+  
+  1 - Separete raw SQL from services into two different layers 
+  2 - Rename columns of PostgresSQL for a better readibility 
+  3 - Improve error handling of PostgresSQL, in addition, generic errors.
+  4 - Refatore loops, for a better performance and readibility 
+  5 - Rename functions names for readibility 
+*/
+
 import { handlePostgresqlErrors } from "../middleware/errors/postgresql.middleware";
 import { generateRandomCode } from "../helper/generateRandomCode.helper";
 import { addToCache } from "../infra/cache/cache.infra";
@@ -5,33 +15,30 @@ import { sql } from "bun";
 
 type ShortUrlRow = { short_url: string };
 
-export async function generate_short_url_service(url: string) {
-  let code;
-  let collisions;
-  let attempts_count = 0;
-  const MAX_GENERATION_ATTEMPTS = 5;
+export async function generateShortUrl(url: string) {
+  let code: string;
+  let collision: ShortUrlRow | undefined;
+  let attemptsCount: number = 0;
+  const maxAttempts: number = 5;
 
   try {
-	do {
-    code = generateRandomCode();
-    collisions = (await get_short_url_code_service(code)) as ShortUrlRow;
+    do {
+      code = generateRandomCode();
+      collision = await getShortUrl(code);
 
-    if (!collisions) break;
+      if (!collision) break;
 
-    attempts_count++;
-    } while (
-      collisions.short_url.length > 0 &&
-      attempts_count <= MAX_GENERATION_ATTEMPTS
-    );
+      attemptsCount++;
+    } while (collision?.short_url.length > 0 && attemptsCount <= maxAttempts);
 
-    if (attempts_count > MAX_GENERATION_ATTEMPTS) {
+    if (attemptsCount > maxAttempts) {
       throw new Error("Number of attempts exceeded");
     }
 
     await sql`
-	 	INSERT INTO url_shortner (long_url, short_url) 
-		VALUES (${url}, ${code})
-	`;
+	 	  INSERT INTO url_shortner (long_url, short_url) 
+		  VALUES (${url}, ${code})
+	  `;
   } catch (err) {
     handlePostgresqlErrors(err);
 
@@ -39,18 +46,18 @@ export async function generate_short_url_service(url: string) {
   }
 }
 
-export async function redirect_to_original_url_service(code: string) {
+export async function getRedirectCode(code: string) {
   try {
-    const [LONG_URL] = await sql`
-		SELECT long_url 
-		FROM url_shortner
-		WHERE short_url = ${code}
-	`;
+    const [{ long_url }] = await sql`
+		  SELECT long_url 
+		  FROM url_shortner
+		  WHERE short_url = ${code}
+	  `;
 
-    await update_click_count_service(code);
-    addToCache(code, LONG_URL.long_url);
+    await updateClickCount(code);
+    addToCache(code, long_url);
 
-    return LONG_URL.long_url;
+    return long_url;
   } catch (err) {
     handlePostgresqlErrors(err);
 
@@ -58,37 +65,35 @@ export async function redirect_to_original_url_service(code: string) {
   }
 }
 
-async function get_short_url_code_service(
-  code: string
-): Promise<ShortUrlRow | undefined> {
+async function getShortUrl(code: string): Promise<ShortUrlRow | undefined> {
   try {
-    const [SHORT_URL_ROW] = await sql`
-		SELECT short_url 
-		FROM url_shortner 
-		WHERE short_url = ${code}
-	`;
+    const [ shortUrlRow ] = await sql`
+		  SELECT short_url 
+		  FROM url_shortner 
+		  WHERE short_url = ${code}
+	  `;
 
-    return SHORT_URL_ROW;
+    return shortUrlRow;
   } catch (err) {
     handlePostgresqlErrors(err);
     throw err;
   }
 }
 
-async function update_click_count_service(code: string) {
+async function updateClickCount(code: string) {
   try {
-    const CURRENT_CLICKS_OBJ = await get_clicks_count_service(code);
-    const CURRENT_CLIKS_INT = CURRENT_CLICKS_OBJ[0]?.clicks;
+    const currentClicksObj = await getClicksCount(code);
+    const currentClicksInt = currentClicksObj[0]?.clicks;
 
-    if (typeof CURRENT_CLIKS_INT !== "number") {
+    if (typeof currentClicksInt !== "number") {
       throw new TypeError("The click column is not a number");
     }
 
     await sql`
-		UPDATE url_shortner 
-		SET clicks = clicks + 1 
-		WHERE short_url = ${code}
-	`;
+		  UPDATE url_shortner 
+		  SET clicks = clicks + 1 
+		  WHERE short_url = ${code}
+	  `;
   } catch (err) {
     handlePostgresqlErrors(err);
 
@@ -96,13 +101,13 @@ async function update_click_count_service(code: string) {
   }
 }
 
-async function get_clicks_count_service(code: string) {
+async function getClicksCount(code: string) {
   try {
     return await sql`
-		SELECT clicks 
-		FROM url_shortner 
-		WHERE short_url = ${code}
-	`;
+		  SELECT clicks 
+		  FROM url_shortner 
+		  WHERE short_url = ${code}
+	  `;
   } catch (err) {
     handlePostgresqlErrors(err);
 

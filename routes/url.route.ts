@@ -1,4 +1,4 @@
-import { generateShortUrlService, redirectToOriginalUrlService } from "../services/url.service";
+import { generateShortUrl, getRedirectCode } from "../services/url.service";
 import type { BunRequest } from "bun";
 import * as z from "zod/v4";
 import { PostgresError } from "../error/errors";
@@ -25,7 +25,7 @@ const urlCode = z.string();
 export async function generateShortUrlRoute(req: BunRequest<"/api/url">) {
   try {
     const parsedInput = await urlScheme.parseAsync(await req.json());
-    await generateShortUrlService(parsedInput.url);
+    await generateShortUrl(parsedInput.url);
     return Response.json({}, {status: 200, statusText: 'Ok'});
   } catch (err) {
     if (err instanceof z.ZodError) {
@@ -59,7 +59,7 @@ export async function redirectToOriginalUrlRoute(req: BunRequest<"/api/url">) {
     
     if(cache) {return Response.redirect(cache.value)};
 
-    const longUrl = await redirectToOriginalUrlService(urlCode.parse(value));
+    const longUrl = await getRedirectCode(urlCode.parse(value));
     return Response.redirect(longUrl);
   } catch (err) {
     if (err instanceof z.ZodError) {
