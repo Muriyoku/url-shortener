@@ -40,8 +40,7 @@ export async function generateShortUrl(url: string) {
 export async function getRedirectCode(code: string) {
   try {
     const [{ long_url }] = await getLongUrlByCode(code);
-
-    await incrementClickCount(code);
+    
     addToCache(code, long_url);
 
     return long_url;
