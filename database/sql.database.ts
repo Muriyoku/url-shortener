@@ -1,7 +1,7 @@
 import { sql } from "bun";
 
-type ShortUrlRow = [{short_url: string}];
-type LongUrlRow  = [{long_url: string}];
+type ShortUrlRow = [{short_url: string}] | undefined;
+type LongUrlRow  = [{long_url: string}]  | undefined;
 
 export async function insertShortUrl(url: string, code: string) {
   await sql`

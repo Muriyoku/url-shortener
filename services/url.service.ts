@@ -9,12 +9,9 @@ import {
   insertShortUrl 
 } from "../database/sql.database";
 
-type ShortUrlRow = { short_url: string };
-type ShortUrl = ShortUrlRow | undefined;
-
 export async function generateShortUrl(url: string) {
   let code = "";
-  let collision: ShortUrl;
+  let collision;
   const maxAttempts = 5;
 
   try {
@@ -39,23 +36,24 @@ export async function generateShortUrl(url: string) {
 
 export async function getRedirectCode(code: string) {
   try {
-    const [{ long_url }] = await getLongUrlByCode(code);
-    
-    addToCache(code, long_url);
+    const longUrlRow = await getLongUrlByCode(code) ?? [];
+    const longUrl    = longUrlRow[0]?.long_url;
 
-    return long_url;
+    addToCache(code, longUrl);
+
+    return longUrl;
   } catch (err) {
     handlePostgresqlErrors(err);
-
     throw new Error("Unknown Error");
   }
 }
 
-async function getShortUrl(code: string): Promise<ShortUrlRow | undefined> {
+async function getShortUrl(code: string) {
   try {
-    const [ shortUrlRow ] = await getShortUrlByCode(code); 
+    const shortUrlRow = await getShortUrlByCode(code) ?? []; 
+    const shortUrl    = shortUrlRow[0]?.short_url;
 
-    return shortUrlRow;
+    return shortUrl;
   } catch (err) {
     handlePostgresqlErrors(err);
     throw err;

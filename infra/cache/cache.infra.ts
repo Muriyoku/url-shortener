@@ -14,7 +14,9 @@ export function getFromCache(code: string) {
   } else return null;
 };
 
-export function addToCache(key: string, value: string) {
+export function addToCache(key: string, value: string | undefined | null) {
+  if(typeof value === 'undefined' || !value) return;
+   
   cache.set(key, {
     value: value,
     expiration: Date.now() + expirationTime,
