@@ -1,9 +1,13 @@
-import { generateShortUrl, getRedirectCode, updateClicksCount } from "../services/url.service";
+import { getFromCache } from "../infra/cache/cache.infra";
+import { handleRouteErrors} from "./errors/routeErrors.route";
 import type { BunRequest } from "bun";
 import * as z from "zod/v4";
-import { recordErrors } from "../helper/recordErrors";
-import { getFromCache } from "../infra/cache/cache.infra";
-import { PostgresError } from "../database/errors.database";
+
+import { 
+  generateShortUrl, 
+  getRedirectCode, 
+  updateClicksCount 
+} from "../services/url.service";
 
 const allowedProtocols = ["http:", "https:"];
 
@@ -22,63 +26,40 @@ const urlScheme = z.object({
 
 const urlCode = z.string();
 
-export async function generateShortUrlRoute(req: BunRequest<"/api/url">) {
+export async function handleShortUrlGeneration(req: BunRequest<"/api/url">) {
   try {
     const parsedInput = await urlScheme.parseAsync(await req.json());
+
     await generateShortUrl(parsedInput.url);
+
     return Response.json({}, {status: 200, statusText: 'Ok'});
   } catch (err) {
-
-    if (err instanceof z.ZodError) {
-      recordErrors(err);
-      return Response.json(
-        { message: err.issues },
-        { status: 400, statusText: "Bad Request" }
-      );
-    };
-
-    if(err instanceof PostgresError) {
-      return Response.json({}, { status: 500, statusText: err.message});
-    };
-
-    recordErrors(err);
-    return Response.json(
-      { status: 500, statusText: "Internal Server Error" }
-    );
+    return handleRouteErrors(err);
   };
 };
 
-export async function redirectToOriginalUrlRoute(req: BunRequest<"/api/url">) {
+export async function redirectToOriginalUrl(req: BunRequest<"/api/url">) {
   const query = new URLSearchParams(req.url);
-  let value: undefined | string;
-  for (const values of query.values()) value = values;
+  let code: undefined | string;
+
+  for (const value of query.values()) code = value;
   try {
-    const cache = getFromCache(urlCode.parse(value));
+    const cache = getFromCache(urlCode.parse(code));
     
     if(cache) {
-      updateClicksCount(urlCode.parse(value));
+      updateClicksCount(urlCode.parse(code));
       return Response.redirect(cache.value)
     };
 
-    const longUrl = await getRedirectCode(urlCode.parse(value));
+    const longUrl = await getRedirectCode(urlCode.parse(code));
 
-    if(!longUrl) {
-      throw new Error("Url no longer available")
-    }
+    if(longUrl) {
+      updateClicksCount(urlCode.parse(code));
+      return Response.redirect(longUrl);
+    };
 
-    updateClicksCount(urlCode.parse(value));
-    return Response.redirect(longUrl);
+    throw new Error("Url no longer available")
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      recordErrors(err)
-      return Response.json(
-        { message: err.issues },
-        { status: 400, statusText: "Bad Request" }
-      );
-    }
-    recordErrors(err)
-    return Response.json(
-      { status: 500, statusText: "Internal Server Error" }
-    );
+    return handleRouteErrors(err);
   };
 };
