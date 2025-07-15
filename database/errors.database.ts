@@ -15,6 +15,7 @@ export function handleDatabaseErrors(err: any) {
     abortedTransaction(err);
     uniqueConstraint(err);
     nullConstraint(err);
+    return Error("Unknown Error");
   } catch(dbErr: any) {
     return dbErr;
   };
