@@ -1,4 +1,4 @@
-import { handlePostgresqlErrors } from "../middleware/errors/postgresql.middleware";
+import { handleDatabaseErrors } from "../database/errors.database";
 import { generateRandomCode } from "../helper/generateRandomCode.helper";
 import { addToCache } from "../infra/cache/cache.infra";
 import { recordErrors } from "../helper/recordErrors";
@@ -28,9 +28,8 @@ export async function generateShortUrl(url: string) {
 
     await insertShortUrl(url, code);
   } catch (err) {
-    handlePostgresqlErrors(err);
     recordErrors(err);
-    throw new Error(`Unkown Error`);
+    throw handleDatabaseErrors(err);
   };
 };
 
@@ -43,8 +42,8 @@ export async function getRedirectCode(code: string) {
 
     return longUrl;
   } catch (err) {
-    handlePostgresqlErrors(err);
-    throw new Error("Unknown Error");
+    recordErrors(err);
+    return handleDatabaseErrors(err);
   }
 }
 
@@ -55,8 +54,8 @@ async function getShortUrl(code: string) {
 
     return shortUrl;
   } catch (err) {
-    handlePostgresqlErrors(err);
-    throw err;
+    recordErrors(err);
+    return handleDatabaseErrors(err);
   }
 }
 
@@ -64,7 +63,7 @@ export async function updateClicksCount(code: string) {
   try {
     await incrementClickCount(code);
   } catch(err) {
-    handlePostgresqlErrors(err);
-    throw err;
+    recordErrors(err);
+    return handleDatabaseErrors(err);
   };
 };

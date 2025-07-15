@@ -1,9 +1,9 @@
 import { generateShortUrl, getRedirectCode, updateClicksCount } from "../services/url.service";
 import type { BunRequest } from "bun";
 import * as z from "zod/v4";
-import { PostgresError } from "../error/errors";
 import { recordErrors } from "../helper/recordErrors";
 import { getFromCache } from "../infra/cache/cache.infra";
+import { PostgresError } from "../database/errors.database";
 
 const allowedProtocols = ["http:", "https:"];
 
@@ -28,6 +28,7 @@ export async function generateShortUrlRoute(req: BunRequest<"/api/url">) {
     await generateShortUrl(parsedInput.url);
     return Response.json({}, {status: 200, statusText: 'Ok'});
   } catch (err) {
+
     if (err instanceof z.ZodError) {
       recordErrors(err);
       return Response.json(
@@ -35,12 +36,9 @@ export async function generateShortUrlRoute(req: BunRequest<"/api/url">) {
         { status: 400, statusText: "Bad Request" }
       );
     };
+
     if(err instanceof PostgresError) {
-      recordErrors(err);
-      return Response.json(
-        { message: err.message}, 
-        { status: err.status, statusText: err.statusText}
-      );
+      return Response.json({}, { status: 500, statusText: err.message});
     };
 
     recordErrors(err);
@@ -63,6 +61,11 @@ export async function redirectToOriginalUrlRoute(req: BunRequest<"/api/url">) {
     };
 
     const longUrl = await getRedirectCode(urlCode.parse(value));
+
+    if(!longUrl) {
+      throw new Error("Url no longer available")
+    }
+
     updateClicksCount(urlCode.parse(value));
     return Response.redirect(longUrl);
   } catch (err) {

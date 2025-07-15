@@ -8,13 +8,14 @@ let isWriting = false;
 
 export function recordErrors(err: any) {
   const currentDate = new Date().toISOString();
+  const errName = err.name;
   let formattedErr: string;
 
   if (err instanceof z.ZodError) {
     const issue = err.issues[0];
-    formattedErr = `[${currentDate}] ${issue?.message ?? "Unknown validation error"}\n`;
+    formattedErr = `[${currentDate}] (${errName}) ${issue?.message ?? "Unknown validation error"}\n`;
   } else {
-    formattedErr = `[${currentDate}] ${err?.message ?? "Unknown error"}\n`;
+    formattedErr = `[${currentDate}] (${errName}) ${err?.message ?? "Unknown error"}\n`;
   };
 
   logQueue.push(formattedErr);
