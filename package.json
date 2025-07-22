@@ -4,8 +4,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest",
-    "jest": "^30.0.4"
+    "@types/bun": "latest"
   },
   "scripts": {
     "start": "bun run --watch index.ts"
