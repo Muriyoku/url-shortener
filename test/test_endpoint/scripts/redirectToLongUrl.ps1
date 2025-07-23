@@ -1,1 +1,0 @@
-Invoke-RestMethod -Uri "http://localhost:3000/api/url?q=kTuyoxeLcb9" -Method Get

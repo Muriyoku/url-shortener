@@ -47,7 +47,7 @@ export async function getRedirectCode(code: string) {
   }
 }
 
-async function getShortUrl(code: string) {
+export async function getShortUrl(code: string) {
   try {
     const shortUrlRow = await getShortUrlByCode(code) ?? []; 
     const shortUrl    = shortUrlRow[0]?.short_url;
