@@ -79,7 +79,7 @@ describe('generate short url', () => {
   (generateRandomCode as any).mockClear();
   (getShortUrl as any).mockClear();
 
-  test('it should register the exeception thrown on logs', async () => {
+  test('thrown and register exceptions on logs', async () => {
     (generateRandomCode as any).mockReturnValue('dwreq123jf');
     (getShortUrl as any).mockReturnValue('dwreq123jf');
 
