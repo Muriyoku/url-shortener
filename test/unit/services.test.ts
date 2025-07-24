@@ -84,6 +84,12 @@ describe('generate short url', () => {
     (getShortUrl as any).mockReturnValue('dwreq123jf');
 
     expect(recordErrors).toBeCalledTimes(1);
+  });
+
+  test('throw exeception correctly', () => {
+    (generateRandomCode as any).mockReturnValue('dwreq123jf');
+    (getShortUrl as any).mockReturnValue('dwreq123jf');
+
     expect(handleDatabaseErrors).toBeCalledTimes(1);
     expect(generateShortUrl).toThrow();
   });
