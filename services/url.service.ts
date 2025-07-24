@@ -56,7 +56,7 @@ export async function getShortUrl(code: string) {
     const shortUrlRow = await getShortUrlByCode(code) ?? []; 
     const shortUrl    = shortUrlRow[0]?.short_url;
 
-    return shortUrl;
+    return shortUrl ?? '';
   } catch (err) {
     recordErrors(err);
     return handleDatabaseErrors(err);
