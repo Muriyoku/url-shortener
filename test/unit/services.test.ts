@@ -1,9 +1,20 @@
 import { test, mock, expect, describe, afterEach, beforeEach } from 'bun:test';
 import { generateRandomCode } from '../../helper/generateRandomCode.helper';
-import { generateShortUrl, getShortUrl } from '../../services/url.service';
 import { handleDatabaseErrors } from '../../database/errors.database';
-import { insertShortUrl } from '../../database/sql.database';
+import { insertShortUrl, getLongUrlByCode } from '../../database/sql.database';
 import { recordErrors } from '../../helper/recordErrors';
+import { addToCache } from '../../infra/cache/cache.infra';
+import { 
+  generateShortUrl, 
+  getShortUrl, 
+  getRedirectCode 
+} from '../../services/url.service';
+
+mock.module('../../infra/cache/cache.infra', () => {
+  return {
+    addToCache: mock(),
+  }
+});
 
 mock.module('../../helper/generateRandomCode.helper', () => {
   return {
@@ -32,6 +43,7 @@ mock.module('../../services/url.service', () => {
 mock.module('../../database/sql.database', () => {
   return {
     insertShortUrl: mock(),
+    getLongUrlByCode: mock(),
     handleDatabaseErrors: mock()
   };
 });
@@ -87,5 +99,26 @@ describe('generate short url', () => {
 
     expect(handleDatabaseErrors).toBeCalledTimes(1);
     expect(generateShortUrl).toThrow();
+  });
+});
+
+describe('get redirect code service', () => {
+  test('no cache empty code values', async () => {
+    await (getLongUrlByCode as any).mockReturnValueOnce(null);
+    
+    await getRedirectCode('ABC123')
+
+    expect(addToCache).not.toBeCalled();
+  });
+
+  test('cache value correctly', async () => {
+    await (getLongUrlByCode as any).mockReturnValueOnce([{
+      long_url: "https://example.com"
+    }]);
+
+    await getRedirectCode('ABC123');
+
+    expect(addToCache).toHaveBeenCalledTimes(1);
+    expect(addToCache).toBeCalledWith('ABC123', 'https://example.com');
   });
 });

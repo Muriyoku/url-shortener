@@ -38,6 +38,10 @@ export async function getRedirectCode(code: string) {
     const longUrlRow = await getLongUrlByCode(code) ?? [];
     const longUrl    = longUrlRow[0]?.long_url;
 
+    if(!longUrl) {
+      return '';
+    };
+
     addToCache(code, longUrl);
 
     return longUrl;
