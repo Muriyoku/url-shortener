@@ -36,16 +36,17 @@ mock.module('../../database/sql.database', () => {
   };
 });
 
-beforeEach(() => {
-  console.log("running test.");
-});
-
-afterEach(() => {
-  console.log("done with test.");
-  mock.restore();
-});
-
 describe('generate short url', () => {
+
+  beforeEach(() => {
+    console.log("running test.");
+  });
+  
+  afterEach(() => {
+    console.log("done with test.");
+    (generateRandomCode as any).mockClear();
+    (getShortUrl as any).mockClear();
+  });
 
   test("inserts a new short URL when there is no collision on first attempt", async () => {
     (generateRandomCode as any).mockReturnValueOnce('dwreq123jf');
@@ -58,9 +59,6 @@ describe('generate short url', () => {
     expect(insertShortUrl).toHaveBeenCalledWith("https://example.com", "dwreq123jf");
     expect(recordErrors).not.toHaveBeenCalled();
   }); 
-
-  (generateRandomCode as any).mockClear();
-  (getShortUrl as any).mockClear();
 
   test.failing("it fails when exceed five attempts", async () => {
     (generateRandomCode as any).mockReturnValue('dwreq123jf');
@@ -75,9 +73,6 @@ describe('generate short url', () => {
     expect(getShortUrl).toBeCalledTimes(5);
     expect(insertShortUrl).not.toHaveBeenCalled();
   });
-
-  (generateRandomCode as any).mockClear();
-  (getShortUrl as any).mockClear();
 
   test('register exception on log', async () => {
     (generateRandomCode as any).mockReturnValue('dwreq123jf');
