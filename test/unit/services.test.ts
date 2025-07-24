@@ -1,13 +1,21 @@
 import { test, mock, expect, describe, afterEach, beforeEach } from 'bun:test';
 import { generateRandomCode } from '../../helper/generateRandomCode.helper';
 import { handleDatabaseErrors } from '../../database/errors.database';
-import { insertShortUrl, getLongUrlByCode } from '../../database/sql.database';
 import { recordErrors } from '../../helper/recordErrors';
 import { addToCache } from '../../infra/cache/cache.infra';
+
+import { 
+  insertShortUrl, 
+  getLongUrlByCode, 
+  getShortUrlByCode,
+  incrementClickCount,
+} from '../../database/sql.database';
+
 import { 
   generateShortUrl, 
   getShortUrl, 
-  getRedirectCode 
+  getRedirectCode,
+  updateClicksCount,
 } from '../../services/url.service';
 
 mock.module('../../infra/cache/cache.infra', () => {
@@ -44,7 +52,9 @@ mock.module('../../database/sql.database', () => {
   return {
     insertShortUrl: mock(),
     getLongUrlByCode: mock(),
-    handleDatabaseErrors: mock()
+    handleDatabaseErrors: mock(),
+    getShortUrlByCode: mock(),
+    incrementClickCount: mock(),
   };
 });
 
@@ -120,5 +130,24 @@ describe('get redirect code service', () => {
 
     expect(addToCache).toHaveBeenCalledTimes(1);
     expect(addToCache).toBeCalledWith('ABC123', 'https://example.com');
+  });
+});
+
+describe('get short url', () => {
+  (getShortUrl as any).mockRestore();
+
+  test('check if functions are called correctly', async () => {
+    (getShortUrlByCode as any).mockReturnValueOnce([{short_url: "https://example.com"}]);
+
+    await getShortUrl('ABC123');
+
+    expect(getShortUrl).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('increment clicks service', () => {
+  test('updated the click count on database', async () => {
+    await updateClicksCount('ABC123');
+    expect(incrementClickCount).toHaveBeenCalledTimes(1);
   });
 });
